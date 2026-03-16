@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SOMOS · Kin del Día</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Nunito:wght@600;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  width:100%;height:100%;overflow:hidden;user-select:none;
+  background:#05030e;
+  font-family:'Nunito',sans-serif;
+}
+#app{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  overflow-y:auto;overflow-x:hidden;
+  padding:10px 10px 20px;
+  gap:8px;
+}
+#app::-webkit-scrollbar{width:3px;}
+#app::-webkit-scrollbar-thumb{background:rgba(200,150,255,0.2);}
+
+/* ── BG canvas ── */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+/* ── All content above bg ── */
+#app > *{position:relative;z-index:1;}
+
+/* ── DATE HEADER ── */
+#date-bar{
+  width:100%;max-width:420px;
+  text-align:center;padding:6px 0 2px;
+}
+#gregorian{
+  font-size:clamp(9px,2.5vw,12px);color:rgba(200,160,255,0.5);
+  letter-spacing:2px;font-family:'Cinzel',serif;
+}
+#maya-date{
+  font-size:clamp(8px,2vw,10px);color:rgba(180,140,255,0.35);
+  letter-spacing:1px;margin-top:2px;
+}
+
+/* ── MAIN CARD ── */
+#main-card{
+  width:100%;max-width:420px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(200,150,255,0.18);
+  border-radius:20px;padding:16px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-shadow:0 0 40px rgba(150,80,255,0.08),inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ── GLYPH ── */
+#glyph-wrap{
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+#glyph-canvas{border-radius:50%;}
+
+/* ── KIN NUMBER ── */
+#kin-num{
+  font-family:'Cinzel',serif;
+  font-size:clamp(13px,4vw,18px);
+  font-weight:900;color:rgba(220,190,255,0.6);
+  letter-spacing:3px;
+}
+
+/* ── SELLO + TONO ── */
+#kin-name{
+  text-align:center;
+  font-family:'Cinzel',serif;
+  font-size:clamp(18px,5.5vw,26px);
+  font-weight:900;line-height:1.15;
+}
+#tone-name{
+  font-size:clamp(9px,2vw,11px);
+  color:rgba(220,190,255,0.4);
+  font-family:'Nunito',sans-serif;letter-spacing:2px;
+  text-align:center;margin-top:-6px;
+  font-weight:700;text-transform:uppercase;
+}
+
+/* ── QUALITIES ROW ── */
+#qualities{
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+}
+.qual{
+  padding:3px 10px;border-radius:20px;
+  font-size:clamp(7px,2vw,9px);font-weight:900;letter-spacing:1px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  color:rgba(220,200,255,0.6);
+}
+
+/* ── AFFIRMATION ── */
+#affirmation{
+  font-size:clamp(10px,2.8vw,13px);
+  color:rgba(220,190,255,0.75);
+  text-align:center;line-height:1.55;
+  font-style:italic;padding:0 8px;
+  border-left:2px solid rgba(200,150,255,0.2);
+  border-right:2px solid rgba(200,150,255,0.2);
+  padding:6px 12px;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,150,255,0.2),transparent);
+}
+
+/* ── ONDA ENCANTADA ── */
+#wave-card{
+  width:100%;max-width:420px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(150,100,255,0.15);
+  border-radius:18px;padding:14px 12px;
+  display:flex;flex-direction:column;gap:10px;
+}
+#wave-title{
+  font-family:'Cinzel',serif;
+  font-size:clamp(9px,2.5vw,11px);
+  color:rgba(180,140,255,0.5);
+  letter-spacing:2px;text-align:center;
+  font-weight:900;
+}
+#wave-name{
+  font-family:'Cinzel',serif;
+  font-size:clamp(14px,4vw,18px);
+  font-weight:900;text-align:center;
+}
+#wave-sub{
+  font-size:clamp(8px,2.2vw,10px);
+  color:rgba(200,170,255,0.45);
+  text-align:center;letter-spacing:1px;
+  margin-top:-6px;
+}
+
+/* ── 13 DÍAS GRID ── */
+#wave-grid{
+  display:grid;grid-template-columns:repeat(13,1fr);
+  gap:3px;
+}
+.wave-day{
+  aspect-ratio:1;border-radius:6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,0.06);
+  background:rgba(255,255,255,0.02);
+  font-size:clamp(6px,1.5vw,8px);
+  color:rgba(200,180,255,0.35);
+  cursor:default;transition:all 0.2s;
+  gap:1px;padding:2px 1px;
+}
+.wave-day .wd-num{font-weight:900;font-size:clamp(7px,1.8vw,9px);}
+.wave-day .wd-icon{font-size:clamp(8px,2.2vw,11px);}
+.wave-day.past{background:rgba(150,100,255,0.06);color:rgba(200,180,255,0.4);}
+.wave-day.today{
+  border-color:rgba(220,180,255,0.6);
+  background:rgba(180,120,255,0.18);
+  color:#fff;
+  box-shadow:0 0 10px rgba(180,120,255,0.3);
+  transform:scale(1.05);
+}
+.wave-day.future{color:rgba(200,180,255,0.2);}
+
+/* ── TONE MEANING ── */
+#tone-card{
+  width:100%;max-width:420px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(150,100,255,0.12);
+  border-radius:16px;padding:12px 14px;
+  display:flex;gap:12px;align-items:center;
+}
+#tone-circle{
+  flex-shrink:0;width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;font-family:'Cinzel',serif;
+  border:2px solid rgba(255,255,255,0.15);
+}
+#tone-info{flex:1;}
+#tone-label{font-family:'Cinzel',serif;font-size:clamp(11px,3vw,13px);font-weight:900;}
+#tone-kw{font-size:clamp(8px,2vw,10px);color:rgba(200,180,255,0.5);letter-spacing:1px;margin-top:2px;}
+#tone-meaning{font-size:clamp(9px,2.3vw,11px);color:rgba(220,200,255,0.65);margin-top:4px;line-height:1.45;}
+
+/* ── SELLO INFO ── */
+#sello-card{
+  width:100%;max-width:420px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(150,100,255,0.12);
+  border-radius:16px;padding:12px 14px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+#sello-icon-wrap{flex-shrink:0;width:52px;height:52px;display:flex;align-items:center;justify-content:center;}
+#sello-info{flex:1;}
+#sello-label{font-family:'Cinzel',serif;font-size:clamp(11px,3vw,13px);font-weight:900;}
+#sello-kw{font-size:clamp(8px,2vw,10px);color:rgba(200,180,255,0.5);letter-spacing:1px;margin-top:2px;}
+#sello-meaning{font-size:clamp(9px,2.3vw,11px);color:rgba(220,200,255,0.65);margin-top:4px;line-height:1.45;}
+
+/* ── FOOTER ── */
+#footer{
+  font-size:clamp(7px,2vw,9px);color:rgba(180,140,255,0.25);
+  text-align:center;letter-spacing:1px;padding:4px 0;
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="app">
+  <div id="date-bar">
+    <div id="gregorian"></div>
+    <div id="maya-date"></div>
+  </div>
+
+  <div id="main-card">
+    <div id="kin-num"></div>
+    <div id="glyph-wrap"><canvas id="glyph-canvas"></canvas></div>
+    <div id="kin-name"></div>
+    <div id="tone-name"></div>
+    <div id="qualities"></div>
+    <div class="divider"></div>
+    <div id="affirmation"></div>
+  </div>
+
+  <div id="wave-card">
+    <div id="wave-title">✦ ONDA ENCANTADA ✦</div>
+    <div id="wave-name"></div>
+    <div id="wave-sub"></div>
+    <div id="wave-grid"></div>
+  </div>
+
+  <div id="tone-card">
+    <div id="tone-circle"></div>
+    <div id="tone-info">
+      <div id="tone-label"></div>
+      <div id="tone-kw"></div>
+      <div id="tone-meaning"></div>
+    </div>
+  </div>
+
+  <div id="sello-card">
+    <div id="sello-icon-wrap"><canvas id="sello-canvas"></canvas></div>
+    <div id="sello-info">
+      <div id="sello-label"></div>
+      <div id="sello-kw"></div>
+      <div id="sello-meaning"></div>
+    </div>
+  </div>
+
+  <div id="footer">Sincronario de 13 Lunas · José Argüelles · Ley del Tiempo</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// TZOLKIN DATA
+// ══════════════════════════════════════════════════════════
+
+// 20 SELLOS SOLARES (en orden)
+const SELLOS=[
+  {num:0, name:'Dragón',    nameES:'Dragón',     glyph:'🐉', color:'#cc2244', color2:'#ff4466', keyword:'Ser',       power:'Nutre',      action:'Nace',    meaning:'Inicio, sangre, receptividad. El sello del origen primordial, la madre cósmica que nutre toda vida.'},
+  {num:1, name:'Viento',    nameES:'Viento',      glyph:'💨', color:'#ffffff', color2:'#ccddff', keyword:'Espíritu',  power:'Comunica',   action:'Respira', meaning:'Comunicación, espíritu, aliento divino. Canal del soplo creador que transmite la verdad universal.'},
+  {num:2, name:'Noche',     nameES:'Noche',       glyph:'🌙', color:'#2244aa', color2:'#4466cc', keyword:'Abundancia',power:'Sueña',      action:'Intuye',  meaning:'Sueños, abundancia, profundidad interior. El gran soñador que atraviesa la oscuridad hacia el amanecer.'},
+  {num:3, name:'Semilla',   nameES:'Semilla',     glyph:'🌱', color:'#22aa44', color2:'#44cc66', keyword:'Florecimiento',power:'Apunta',  action:'Conoce',  meaning:'Metas, florecimiento, potencial. La semilla lleva el plan completo dentro de sí misma.'},
+  {num:4, name:'Serpiente', nameES:'Serpiente',   glyph:'🐍', color:'#aa2200', color2:'#dd4422', keyword:'Fuerza vital',power:'Sobrevive',action:'Instinta',meaning:'Fuerza vital, pasión, despertar de Kundalini. La serpiente de sabiduría que muda su piel para renacer.'},
+  {num:5, name:'Enlazador', nameES:'Enlazador de Mundos', glyph:'☯️',color:'#666688',color2:'#8888aa',keyword:'Muerte/Oportunidad',power:'Iguala',action:'Muere',meaning:'Transformación, oportunidad, ecuanimidad. El puente entre mundos que transforma lo viejo en nuevo.'},
+  {num:6, name:'Mano',      nameES:'Mano',        glyph:'🖐', color:'#44aa88', color2:'#66ccaa', keyword:'Logro',     power:'Sana',       action:'Conoce',  meaning:'Sanación, logro, completar ciclos. Las manos que tocan y transforman la realidad con poder de curar.'},
+  {num:7, name:'Estrella',  nameES:'Estrella',    glyph:'⭐', color:'#aaaa22', color2:'#dddd44', keyword:'Belleza',   power:'Embellece',  action:'Armoniza',meaning:'Arte, belleza, elegancia. La estrella que brilla como ejemplo de lo que la creación puede alcanzar.'},
+  {num:8, name:'Luna',      nameES:'Luna',        glyph:'🌕', color:'#2288cc', color2:'#44aaee', keyword:'Agua',      power:'Purifica',   action:'Fluye',   meaning:'Agua, emociones, purificación universal. La luna gobierna las mareas del sentimiento y la memoria.'},
+  {num:9, name:'Perro',     nameES:'Perro',       glyph:'🐕', color:'#cc6622', color2:'#ee8844', keyword:'Amor',      power:'Ama',        action:'Leal',    meaning:'Amor incondicional, lealtad, corazón. El compañero fiel que recuerda la esencia del amor puro.'},
+  {num:10,name:'Mono',      nameES:'Mono',        glyph:'🐒', color:'#aa6600', color2:'#cc8822', keyword:'Magia',     power:'Conoce',     action:'Juega',   meaning:'Magia, ilusión, juego divino. El mono artista que sabe que toda la creación es el juego de Dios.'},
+  {num:11,name:'Humano',    nameES:'Humano',      glyph:'🧑', color:'#886622', color2:'#aa8844', keyword:'Sabiduría', power:'Influencia', action:'Cuestiona',meaning:'Libre albedrío, sabiduría, cosecha. El ser que elige libremente su destino con inteligencia.'},
+  {num:12,name:'Caminante',nameES:'Caminante del Cielo',glyph:'🚶',color:'#aa2288',color2:'#cc44aa',keyword:'Espacio',power:'Explora',   action:'Alerta',  meaning:'Exploración, templanza, espacio sagrado. El viajero que recorre los tres mundos en búsqueda de la verdad.'},
+  {num:13,name:'Mago',      nameES:'Mago',        glyph:'🔮', color:'#4422aa', color2:'#6644cc', keyword:'Sin tiempo',power:'Encanta',   action:'Hechiza', meaning:'Magia atemporal, receptividad, alineación. El mago que vive fuera del tiempo ordinario.'},
+  {num:14,name:'Águila',    nameES:'Águila',      glyph:'🦅', color:'#224488', color2:'#4466aa', keyword:'Visión',    power:'Crea',       action:'Ve',      meaning:'Visión creativa, mente global, perspectiva del alma. El águila que ve el patrón completo desde las alturas.'},
+  {num:15,name:'Guerrero',  nameES:'Guerrero',    glyph:'⚔️', color:'#aaaa44', color2:'#cccc66', keyword:'Inteligencia',power:'Cuestiona',action:'Teme',   meaning:'Inteligencia cósmica, valentía, cuestionamiento. El guerrero que combate con preguntas, no con espadas.'},
+  {num:16,name:'Tierra',    nameES:'Tierra',      glyph:'🌍', color:'#228844', color2:'#44aa66', keyword:'Evolución', power:'Navega',     action:'Sincroniza',meaning:'Evolución, sincronía, navegación. La Tierra que navega el espacio como nave estelar en evolución.'},
+  {num:17,name:'Espejo',    nameES:'Espejo',      glyph:'🪞', color:'#88aacc', color2:'#aaccee', keyword:'Reflexión', power:'Refleja',    action:'Ordena',  meaning:'Reflexión, verdad infinita, meditación. El espejo que revela la verdad sin distorsión.'},
+  {num:18,name:'Tormenta',  nameES:'Tormenta',    glyph:'⛈️', color:'#6622aa', color2:'#8844cc', keyword:'Autogeneración',power:'Cataliza',action:'Energiza',meaning:'Autogeneración, energía, catálisis. La tormenta que limpia el cielo y renueva la tierra.'},
+  {num:19,name:'Sol',       nameES:'Sol',         glyph:'☀️', color:'#ddaa00', color2:'#ffcc22', keyword:'Vida',      power:'Ilumina',    action:'Asciende',meaning:'Fuego universal, iluminación, conciencia crística. El sol que lleva el fuego sagrado de la vida eterna.'},
+];
+
+// 13 TONOS GALÁCTICOS
+const TONOS=[
+  {num:1,  name:'Magnético',   keyword:'Unifica · Atrae',      question:'¿Cuál es mi propósito?',      action:'Unificar',  color:'#cc2244', meaning:'El tono de la unidad. Atrae hacia sí todo lo que necesita para comenzar. Punto semilla de la onda.'},
+  {num:2,  name:'Lunar',       keyword:'Polariza · Estabiliza', question:'¿Cuál es mi desafío?',        action:'Estabilizar',color:'#2266cc',meaning:'El tono del reto. Identifica el obstáculo para estabilizar y encontrar la dualidad que complementa.'},
+  {num:3,  name:'Eléctrico',   keyword:'Activa · Vincula',     question:'¿Cómo servir mejor?',         action:'Activar',   color:'#22aacc', meaning:'El tono del servicio. Activa la energía y vincula a otros. Electricidad del alma que conecta corazones.'},
+  {num:4,  name:'Autoexistente',keyword:'Define · Mide',       question:'¿Qué forma tendrá?',          action:'Definir',   color:'#aaaa22', meaning:'El tono de la forma. Define los límites y mide la estructura necesaria para manifestar el propósito.'},
+  {num:5,  name:'Overtono',    keyword:'Faculta · Irradia',    question:'¿Cuál es mi núcleo central?', action:'Facultar',  color:'#cc6622', meaning:'El tono del centro. Irradia poder desde el núcleo. Es el punto de máxima concentración de la onda.'},
+  {num:6,  name:'Rítmico',     keyword:'Organiza · Equilibra', question:'¿Cómo puedo extender?',       action:'Organizar', color:'#22aa66', meaning:'El tono del equilibrio. Organiza el espacio físico. Trae ritmo y balance a la manifestación concreta.'},
+  {num:7,  name:'Resonante',   keyword:'Canaliza · Inspira',   question:'¿Cómo puedo sintonizar?',     action:'Canalizar', color:'#aa22aa', meaning:'El tono místico. Canaliza directamente desde el espíritu. El corazón de la onda y punto de máxima vibración.'},
+  {num:8,  name:'Galáctico',   keyword:'Armoniza · Modela',    question:'¿Vivo lo que creo?',          action:'Armonizar', color:'#2244aa', meaning:'El tono de la integridad. Modela lo que se predica. La congruencia entre el ser interior y la acción exterior.'},
+  {num:9,  name:'Solar',       keyword:'Pulsa · Realiza',      question:'¿Cómo me perfecciono?',       action:'Pulsar',    color:'#ddaa00', meaning:'El tono de la intención. Pulsa hacia adelante con la fuerza del sol. Realiza y completa el propósito mayor.'},
+  {num:10, name:'Planetario',  keyword:'Manifiesta · Produce',  question:'¿Cómo logro mi destino?',    action:'Manifestar',color:'#22aa44', meaning:'El tono de la manifestación perfecta. Produce el fruto maduro de toda la onda. La realidad se vuelve visible.'},
+  {num:11, name:'Espectral',   keyword:'Libera · Disuelve',    question:'¿Cómo suelto y dejo ir?',     action:'Liberar',   color:'#cc4488', meaning:'El tono de la liberación. Disuelve lo que ya no sirve. El desapego que abre espacio para lo nuevo.'},
+  {num:12, name:'Cristal',     keyword:'Dedica · Coopera',     question:'¿Cómo dedico lo aprendido?',  action:'Dedicar',   color:'#44aacc', meaning:'El tono de la cooperación. Cristaliza la experiencia en servicio compartido. La fuerza de la comunidad.'},
+  {num:13, name:'Cósmico',     keyword:'Trasciende · Endura',  question:'¿Cómo me elevo?',             action:'Trascender',color:'#8844cc', meaning:'El tono de la trascendencia. Corona la onda con presencia mística. El umbral hacia la próxima onda.'},
+];
+
+// WAVE GUIDE ICONS (simplified glyph icons for the 13-day grid)
+const WAVE_ICONS=['🌱','🌬️','🌙','💧','🔥','🌿','⭐','🐾','🌕','🎭','🧩','✦','🌀'];
+
+// ══════════════════════════════════════════════════════════
+// KIN CALCULATION
+// Reference: KIN 1 = Dragon 1 Magnetic = July 26, 1987 (NAC correlation)
+// More precise: using the standard correlation where
+// KIN 1 = 1 Imix = Jul 26, 1987 in the NAC/Arguelles system
+// ══════════════════════════════════════════════════════════
+
+function getKinForDate(date){
+  // KIN 1 = July 3, 1987 — verified: March 15 2026 = KIN 96 (Tono 5 Guerrero)
+  const refMs=Date.UTC(1987,6,3); // July 3, 1987 (month is 0-indexed: 6=July)
+  const todayMs=Date.UTC(date.getFullYear(),date.getMonth(),date.getDate());
+  const daysDiff=Math.round((todayMs-refMs)/86400000);
+  const kinIdx=((daysDiff%260)+260)%260; // 0-indexed
+  const kinNum=kinIdx+1;                 // 1-260
+  const toneIdx=kinIdx%13;               // 0-12
+  const selloIdx=kinIdx%20;              // 0-19
+  return{kinNum, toneIdx, selloIdx};
+}
+
+function getWaveStart(kinNum){
+  // The wave starts on the kin that has tone 1
+  // Wave start kin = kinNum - toneNum + 1
+  // toneNum = ((kinNum-1)%13)+1
+  const tone=((kinNum-1)%13)+1;
+  const waveStartKin=kinNum-tone+1;
+  return waveStartKin; // could be <=0, handle by wrapping
+}
+
+// ══════════════════════════════════════════════════════════
+// BACKGROUND CANVAS
+// ══════════════════════════════════════════════════════════
+const bgCanvas=document.getElementById('bg');
+const bgCtx=bgCanvas.getContext('2d');
+let bgW,bgH,bgT=0;
+
+function resizeBg(){bgW=bgCanvas.width=window.innerWidth;bgH=bgCanvas.height=window.innerHeight;}
+resizeBg();window.addEventListener('resize',resizeBg);
+
+// Particle stars
+const BG_STARS=Array.from({length:120},(_,i)=>({
+  x:Math.random(),y:Math.random(),
+  r:Math.random()*1.4+0.2,
+  tw:Math.random()*Math.PI*2,
+  tws:0.015+Math.random()*0.025,
+}));
+
+function drawBg(kinColor){
+  bgCtx.fillStyle='#05030e';bgCtx.fillRect(0,0,bgW,bgH);
+  bgT+=0.008;
+  // Nebula glow
+  const ng=bgCtx.createRadialGradient(bgW*0.5,bgH*0.35,0,bgW*0.5,bgH*0.35,bgW*0.55);
+  ng.addColorStop(0,kinColor+'14');ng.addColorStop(0.5,kinColor+'06');ng.addColorStop(1,'rgba(0,0,0,0)');
+  bgCtx.fillStyle=ng;bgCtx.fillRect(0,0,bgW,bgH);
+  // Stars
+  BG_STARS.forEach(s=>{
+    s.tw+=s.tws;
+    const a=(0.3+0.7*Math.abs(Math.sin(s.tw)))*0.6;
+    bgCtx.globalAlpha=a;bgCtx.fillStyle='#fff';
+    bgCtx.beginPath();bgCtx.arc(s.x*bgW,s.y*bgH,s.r,0,Math.PI*2);bgCtx.fill();
+  });
+  bgCtx.globalAlpha=1;
+}
+
+// ══════════════════════════════════════════════════════════
+// GLYPH DRAWING
+// ══════════════════════════════════════════════════════════
+function drawGlyph(canvas, sello, tone, size){
+  canvas.width=canvas.height=size;
+  const c=canvas.getContext('2d');
+  const cx=size/2,cy=size/2,r=size*0.44;
+
+  // Background circle
+  const bg=c.createRadialGradient(cx-r*0.25,cy-r*0.28,r*0.05,cx,cy,r);
+  bg.addColorStop(0,sello.color+'44');bg.addColorStop(0.6,sello.color+'22');bg.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=bg;c.beginPath();c.arc(cx,cy,r*1.1,0,Math.PI*2);c.fill();
+
+  // Outer ring
+  c.strokeStyle=sello.color+'88';c.lineWidth=1.5;
+  c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();
+
+  // Tone dots around ring
+  for(let i=0;i<13;i++){
+    const a=i*Math.PI*2/13-Math.PI/2;
+    const dr=r*1.08;
+    const filled=i<tone.num;
+    c.fillStyle=filled?tone.color+'cc':'rgba(255,255,255,0.12)';
+    c.strokeStyle=filled?tone.color:'rgba(255,255,255,0.1)';
+    c.lineWidth=1;
+    c.beginPath();c.arc(cx+Math.cos(a)*dr,cy+Math.sin(a)*dr,size*0.04,0,Math.PI*2);
+    c.fill();c.stroke();
+  }
+
+  // Inner sacred geometry based on sello num
+  drawSelloGeometry(c,cx,cy,r*0.68,sello,tone);
+
+  // Glyph emoji
+  c.font=`${size*0.28}px serif`;c.textAlign='center';c.textBaseline='middle';
+  c.fillText(sello.glyph,cx,cy-size*0.01);
+}
+
+function drawSelloGeometry(c,cx,cy,r,sello,tone){
+  const col=sello.color;
+  const n=(sello.num%7)+3; // 3-9 pointed shapes
+  c.strokeStyle=col+'55';c.lineWidth=1;
+
+  // Outer polygon
+  c.beginPath();
+  for(let i=0;i<=n;i++){const a=i*Math.PI*2/n-Math.PI/2;c.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}
+  c.closePath();c.stroke();
+
+  // Inner star
+  c.strokeStyle=col+'33';c.lineWidth=0.8;
+  c.beginPath();
+  for(let i=0;i<n;i++){
+    const a1=i*Math.PI*2/n-Math.PI/2;
+    const a2=((i+Math.floor(n/2))%n)*Math.PI*2/n-Math.PI/2;
+    c.moveTo(cx+Math.cos(a1)*r*0.7,cy+Math.sin(a1)*r*0.7);
+    c.lineTo(cx+Math.cos(a2)*r*0.7,cy+Math.sin(a2)*r*0.7);
+  }
+  c.stroke();
+
+  // Center dot
+  c.fillStyle=tone.color+'88';c.beginPath();c.arc(cx,cy,r*0.08,0,Math.PI*2);c.fill();
+}
+
+function drawSmallSello(canvas,sello,size){
+  canvas.width=canvas.height=size;
+  const c=canvas.getContext('2d');
+  const cx=size/2,cy=size/2,r=size*0.42;
+  const bg=c.createRadialGradient(cx,cy,0,cx,cy,r);
+  bg.addColorStop(0,sello.color+'55');bg.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=bg;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.fill();
+  c.strokeStyle=sello.color+'66';c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();
+  c.font=`${size*0.42}px serif`;c.textAlign='center';c.textBaseline='middle';
+  c.fillText(sello.glyph,cx,cy);
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN RENDER
+// ══════════════════════════════════════════════════════════
+function render(){
+  const today=new Date();
+  const {kinNum,toneIdx,selloIdx}=getKinForDate(today);
+  const tono=TONOS[toneIdx];
+  const sello=SELLOS[selloIdx];
+
+  // Wave info
+  const waveStartKin=getWaveStart(kinNum);
+  const dayInWave=tono.num; // 1-13
+  // Wave start sello
+  let waveStartSelloIdx;
+  if(waveStartKin>=1){
+    waveStartSelloIdx=(waveStartKin-1)%20;
+  } else {
+    waveStartSelloIdx=((waveStartKin-1+260)%260)%20;
+  }
+  const waveSello=SELLOS[waveStartSelloIdx];
+
+  // ── DATE ──
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  document.getElementById('gregorian').textContent=
+    `${days[today.getDay()]}, ${today.getDate()} de ${months[today.getMonth()]} ${today.getFullYear()}`;
+
+  // Luna maya aproximada (13 lunas de 28 días + día fuera del tiempo)
+  const lunas=['Etz\'nab','Cauac','Ahau','Imix','Ik','Akbal','Kan','Chicchan','Cimi','Manik','Lamat','Muluc','Oc'];
+  document.getElementById('maya-date').textContent=
+    `KIN ${kinNum} · Ciclo Tzolkin 260`;
+
+  // ── MAIN CARD ──
+  document.getElementById('kin-num').textContent=`KIN ${kinNum}`;
+  document.getElementById('kin-name').innerHTML=
+    `<span style="color:${sello.color2}">${sello.nameES}</span>`;
+  document.getElementById('tone-name').textContent=`día ${tono.num}`;
+  document.getElementById('tone-name').style.color=tono.color+'77';
+
+  // Qualities
+  const qEl=document.getElementById('qualities');
+  qEl.innerHTML='';
+  [{t:`🔑 ${sello.keyword}`},{t:`⚡ ${tono.action}`},{t:`💫 ${tono.keyword.split('·')[0].trim()}`}].forEach(q=>{
+    const d=document.createElement('div');d.className='qual';d.textContent=q.t;qEl.appendChild(d);
+  });
+
+  // Affirmation
+  document.getElementById('affirmation').textContent=
+    `"Soy el/la ${tono.name} de la ${sello.nameES}.\n${tono.question}"`;
+
+  // Glyph
+  const gc=document.getElementById('glyph-canvas');
+  const glyphSize=Math.min(window.innerWidth*0.42,180);
+  drawGlyph(gc,sello,tono,glyphSize);
+
+  // ── ONDA ENCANTADA ──
+  document.getElementById('wave-name').textContent=`Onda de la ${waveSello.nameES}`;
+  document.getElementById('wave-name').style.color=waveSello.color2;
+  document.getElementById('wave-sub').textContent=
+    `Día ${dayInWave} de 13 · Poder: ${waveSello.power} · ${waveSello.keyword}`;
+
+  // 13-day grid
+  const wgEl=document.getElementById('wave-grid');
+  wgEl.innerHTML='';
+  for(let d=1;d<=13;d++){
+    const div=document.createElement('div');
+    div.className='wave-day'+(d<dayInWave?' past':d===dayInWave?' today':' future');
+    // Get the kin for this wave day
+    const dayKinNum=((waveStartKin+d-2+260)%260)||260;
+    const dayToneIdx=(dayKinNum-1)%13;
+    const daySelloIdx=(dayKinNum-1)%20;
+    const dayTono=TONOS[dayToneIdx];
+    const daySello=SELLOS[daySelloIdx];
+    div.innerHTML=`<span class="wd-num" style="color:${d===dayInWave?tono.color:dayTono.color+'88'}">${d}</span>
+      <span class="wd-icon">${daySello.glyph}</span>`;
+    div.title=`Día ${d}: KIN ${dayKinNum} · ${daySello.nameES}`;
+    if(d===dayInWave){
+      div.style.borderColor=tono.color+'88';
+      div.style.background=tono.color+'22';
+      div.style.boxShadow=`0 0 10px ${tono.color}44`;
+    }
+    wgEl.appendChild(div);
+  }
+
+  // ── TONE CARD ──
+  const tc=document.getElementById('tone-circle');
+  tc.textContent=tono.num;
+  tc.style.background=tono.color+'22';
+  tc.style.borderColor=tono.color+'55';
+  tc.style.color=tono.color;
+  tc.style.boxShadow=`0 0 15px ${tono.color}33`;
+  document.getElementById('tone-label').textContent=`Tono ${tono.num}: ${tono.name}`;
+  document.getElementById('tone-label').style.color=tono.color;
+  document.getElementById('tone-kw').textContent=tono.keyword;
+  document.getElementById('tone-meaning').textContent=tono.meaning;
+
+  // ── SELLO CARD ──
+  const sc=document.getElementById('sello-canvas');
+  drawSmallSello(sc,sello,52);
+  document.getElementById('sello-label').textContent=`Sello ${sello.num+1}: ${sello.nameES}`;
+  document.getElementById('sello-label').style.color=sello.color2;
+  document.getElementById('sello-kw').textContent=`${sello.keyword} · ${sello.power} · ${sello.action}`;
+  document.getElementById('sello-meaning').textContent=sello.meaning;
+
+  return sello.color;
+}
+
+// ══════════════════════════════════════════════════════════
+// LOOP
+// ══════════════════════════════════════════════════════════
+let kinColor='#aa66ff';
+function loop(){
+  requestAnimationFrame(loop);
+  drawBg(kinColor);
+}
+kinColor=render();
+loop();
+
+// Re-render at midnight
+function msToMidnight(){
+  const n=new Date();
+  return(86400-(n.getHours()*3600+n.getMinutes()*60+n.getSeconds()))*1000;
+}
+setTimeout(()=>{kinColor=render();setInterval(()=>kinColor=render(),86400000);},msToMidnight());
+</script>
+</body>
+</html>
